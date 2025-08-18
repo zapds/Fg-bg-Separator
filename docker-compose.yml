@@ -1,0 +1,11 @@
+version: "3.11"
+
+services:
+  fg-bg-separator:
+    build: .
+    image: fg-bg-separator
+    volumes:
+      - ./:/app
+      - ./output:/app/output
+    entrypoint: ["python", "test.py"]
+    command: ["--input", "input.mp4", "--output_dir", "output"]
