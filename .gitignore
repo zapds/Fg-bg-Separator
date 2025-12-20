@@ -1,0 +1,8 @@
+__pycache__/
+.env
+
+rvm_mobile
+input.mp4
+output_no_audio.mp4
+output.mp4
+test_input.json
