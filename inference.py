@@ -188,8 +188,6 @@ class Converter:
         self.device = device
         logger.info(f"Loading model from {model_path} on device {device}")
         self.model = torch.jit.load(model_path, map_location=device)
-        if device.startswith("cuda"):
-            self.model.half()
         self.model.eval()
         logger.info("Model loaded successfully")
 
@@ -198,7 +196,7 @@ class Converter:
         convert_video(
             self.model,
             device=self.device,
-            dtype=torch.float16 if self.device.startswith("cuda") else torch.float32,
+            dtype=torch.float32,
             *args,
             **kwargs
         )
