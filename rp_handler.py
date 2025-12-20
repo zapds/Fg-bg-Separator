@@ -79,7 +79,7 @@ def handler(event):
             input_source="input.mp4",
             output_type="video",
             output_composition="output_no_audio.mp4",
-            seq_chunk=1,
+            seq_chunk=8,
             progress=False
         )
 
