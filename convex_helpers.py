@@ -27,7 +27,7 @@ def upload_video_to_convex(url, file_path):
     
     """
     with open(file_path, 'rb') as file:
-        headers = {'Content-Type': 'video/mp4'}
+        headers = {'Content-Type': 'video/webm'}
         response = requests.post(url, headers=headers, data=file)
         response.raise_for_status()
     return response.json().get('storageId')

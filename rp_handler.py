@@ -28,6 +28,7 @@ def update_remove_bg_status(project_id: str, status: str, file_id: str | None = 
         "removeBgEnabled": enabled,
         "removeBgStatus": status,
     })
+
     client.mutation("workerActions:workerUpdateRemoveBgData", {
         "workerSecret": WORKER_SECRET,
         "projectId": project_id,
@@ -45,7 +46,7 @@ def mux_audio(input_video, processed_video, final_video):
         "-i", input_video,
         "-i", processed_video,
         "-c:v", "copy",
-        "-c:a", "copy",
+        "-c:a", "libvorbis",
         "-map", "1:v:0",
         "-map", "0:a:0",
         final_video
@@ -78,21 +79,21 @@ def handler(event):
         converter.convert(
             input_source="input.mp4",
             output_type="video",
-            output_composition="output_no_audio.mp4",
+            output_composition="output_no_audio.webm",
             seq_chunk=8,
             progress=False
         )
 
         # Mux audio back into the processed video
         logger.info("Muxing audio into processed video")
-        mux_audio("input.mp4", "output_no_audio.mp4", "output.mp4")
+        mux_audio("input.mp4", "output_no_audio.webm", "output.webm")
 
         # Generate upload URL and upload the processed video
         logger.info("Generating upload URL")
         upload_url = generate_upload_url()
         
         logger.info("Uploading processed video to Convex storage")
-        storage_id = upload_video_to_convex(upload_url, "output.mp4")
+        storage_id = upload_video_to_convex(upload_url, "output.webm")
 
         # Update status to completed with the file ID
         update_remove_bg_status(project_id, "completed", file_id=storage_id)

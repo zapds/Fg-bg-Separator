@@ -31,26 +31,46 @@ class VideoReader(Dataset):
 class VideoWriter:
     def __init__(self, path, frame_rate, bit_rate=1000000):
         self.container = av.open(path, mode='w')
+        self.path = path
 
         # Convert frame_rate to Fraction if it is float
         if isinstance(frame_rate, float):
             frame_rate = Fraction(str(frame_rate)).limit_denominator(1000)
 
-        self.stream = self.container.add_stream('h264', rate=frame_rate)
-        self.stream.pix_fmt = 'yuv420p'
+        # Detect WebM for Alpha support
+        if path.lower().endswith('.webm'):
+            self.stream = self.container.add_stream('libvpx-vp9', rate=frame_rate)
+            self.stream.pix_fmt = 'yuva420p' # Supports Alpha
+            # Speed up VP9 encoding options (critical for reasonable render times)
+            self.stream.options = {'deadline': 'realtime', 'cpu-used': '4'}
+        else:
+            self.stream = self.container.add_stream('h264', rate=frame_rate)
+            self.stream.pix_fmt = 'yuv420p' # Standard mp4 (no alpha)
+            
         self.stream.bit_rate = bit_rate
     
     def write(self, frames):
         # frames: [T, C, H, W]
         self.stream.width = frames.size(3)
         self.stream.height = frames.size(2)
+        
+        # Handle Grayscale -> RGB
         if frames.size(1) == 1:
-            frames = frames.repeat(1, 3, 1, 1) # convert grayscale to RGB
+            frames = frames.repeat(1, 3, 1, 1)
+
+        # Convert to numpy [T, H, W, C]
         frames = frames.mul(255).byte().cpu().permute(0, 2, 3, 1).numpy()
+
         for t in range(frames.shape[0]):
             frame = frames[t]
-            frame = av.VideoFrame.from_ndarray(frame, format='rgb24')
-            self.container.mux(self.stream.encode(frame))
+            
+            # If 4 channels (RGBA), use 'rgba', otherwise 'rgb24'
+            if frame.shape[2] == 4:
+                frame_av = av.VideoFrame.from_ndarray(frame, format='rgba')
+            else:
+                frame_av = av.VideoFrame.from_ndarray(frame, format='rgb24')
+            
+            self.container.mux(self.stream.encode(frame_av))
                 
     def close(self):
         self.container.mux(self.stream.encode())
@@ -90,4 +110,3 @@ class ImageSequenceWriter:
             
     def close(self):
         pass
-        
