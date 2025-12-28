@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 CONVEX_URL = os.environ.get("CONVEX_URL")
-WORKER_SECRET = os.environ.get("WORKER_SECRET")
 
 client = ConvexClient(CONVEX_URL)
 
@@ -60,19 +59,20 @@ def update_remove_bg_status(project_id: str, status: str, file_id: str | None = 
     remove_bg_data = json.dumps({
         "fileId": file_id,
         "removeBgEnabled": enabled,
-        "removeBgStatus": status,
     })
 
     client.mutation("workerActions:workerUpdateRemoveBgData", {
-        "workerSecret": WORKER_SECRET,
         "projectId": project_id,
         "removeBgData": remove_bg_data,
     })
 
-def generate_upload_url() -> str:
-    return client.mutation("workerActions:workerGenerateUploadUrl", {
-        "workerSecret": WORKER_SECRET,
+    client.mutation("workerActions:workerUpdateRemoveBgStatus", args={
+        "projectId": project_id,
+        "status": status
     })
+
+def generate_upload_url() -> str:
+    return client.mutation("workerActions:workerGenerateUploadUrl", {})
 
 def mux_audio(input_video, processed_video, final_video):
     cmd = [
